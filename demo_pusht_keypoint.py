@@ -43,7 +43,7 @@ def main(output, render_size, control_hz):
         env.seed(seed)
         
         # reset env and get observations (including info and render for recording)
-        obs = env.reset()
+        obs = env.reset(np.array([356,356,np.pi/4]))
         info = env._get_info()
         img = env.render(mode='human')
         

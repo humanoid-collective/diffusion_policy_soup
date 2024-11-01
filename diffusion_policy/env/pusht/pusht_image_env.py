@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 class PushTImageEnv(PushTEnv):
-    metadata = {"render.modes": ["rgb_array"], "video.frames_per_second": 10}
+    metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 10}
 
     def __init__(self,
             legacy=False,
@@ -58,7 +58,7 @@ class PushTImageEnv(PushTEnv):
         return obs
 
     def render(self, mode):
-        assert mode == 'rgb_array'
+        # assert mode == 'rgb_array'
 
         if self.render_cache is None:
             self._get_obs()

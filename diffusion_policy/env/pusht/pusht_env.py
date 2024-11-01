@@ -84,9 +84,9 @@ class PushTEnv(gym.Env):
         self.latest_action = None
         self.reset_to_state = reset_to_state
     
-    def reset(self):
+    def reset(self, goal_pose):
         seed = self._seed
-        self._setup()
+        self._setup(goal_pose)
         if self.block_cog is not None:
             self.block.center_of_gravity = self.block_cog
         if self.damping is not None:
@@ -285,7 +285,7 @@ class PushTEnv(gym.Env):
         self._set_state(new_state)
         return new_state
 
-    def _setup(self):
+    def _setup(self, goal_pose):
         self.space = pymunk.Space()
         self.space.gravity = 0, 0
         self.space.damping = 0
@@ -305,7 +305,7 @@ class PushTEnv(gym.Env):
         self.agent = self.add_circle((256, 400), 15)
         self.block = self.add_tee((256, 300), 0)
         self.goal_color = pygame.Color('LightGreen')
-        self.goal_pose = np.array([256,256,np.pi/4])  # x, y, theta (in radians)
+        self.goal_pose = goal_pose  # x, y, theta (in radians)
 
         # Add collision handling
         self.collision_handeler = self.space.add_collision_handler(0, 0)
