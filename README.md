@@ -427,6 +427,34 @@ Read and imitate:
 
 Make sure your workspace yaml's `_target_` points to the new workspace class you created.
 
+## Setting up on vast.ai instance
+
+install deps
+```
+sudo apt-get install -y g++ build-essential
+```
+
+clone repo
+```
+git clone https://github.com/MrPicklePinosaur/diffusion_policy.git
+```
+
+set up conda env
+```
+conda env create -f conda_environment.yaml
+pip install huggingface-hub==0.25.0
+```
+
+login to wandb
+```
+wandb login
+```
+
+run training
+```
+python train.py --config-dir=. --config-name=train_diffusion_unet_lowdim_workspace
+```
+
 ## 🏷️ License
 This repository is released under the MIT license. See [LICENSE](LICENSE) for additional details.
 

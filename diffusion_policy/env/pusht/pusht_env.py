@@ -306,7 +306,7 @@ class PushTEnv(gym.Env):
         self.block = self.add_tee((256, 300), 0)
         self.goal_color = pygame.Color('LightGreen')
         #self.goal_pose = goal_pose  # x, y, theta (in radians)
-        self.goal_pose = np.array([356,356,np.pi/4])# x, y, theta (in radians)
+        self.goal_pose = np.array([256,256,np.pi/4])# x, y, theta (in radians)
 
         # Add collision handling
         self.collision_handeler = self.space.add_collision_handler(0, 0)
