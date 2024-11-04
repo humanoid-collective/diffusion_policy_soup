@@ -3,6 +3,7 @@ from diffusion_policy.policy.base_image_policy import BaseImagePolicy
 import torch
 import hydra
 import dill
+import pathlib
 from copy import deepcopy
 from diffusion_policy.policy.base_lowdim_policy import BaseLowdimPolicy
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
@@ -19,32 +20,45 @@ def load_model(path):
     model: BaseImagePolicy
     model = workspace.model
 
-    return model
+    return model, cfg
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print('usage: merge.py <checkpoint_A> <checkpoint_B>')
+    if len(sys.argv) != 4:
+        print('usage: merge.py <checkpoint_A> <checkpoint_B> <output_path>')
         sys.exit(1)
 
-    model_a = load_model(sys.argv[1])
+    output_path = pathlib.Path(sys.argv[3])
+
+    model_a, cfg = load_model(sys.argv[1])
+
     # print(model_a)
+    # print(model_a.state_dict().keys())
 
-    model_b = load_model(sys.argv[2])
-    print(model_b)
+    model_b, _ = load_model(sys.argv[2])
+    # print(model_b)
 
-'''
     if model_a.state_dict().keys() != model_b.state_dict().keys():
         print('models do not have the same architecture')
         sys.exit(1)
 
+    for param in model_a.state_dict().keys():
+        shape_a = model_a.state_dict()[param].shape 
+        shape_b = model_b.state_dict()[param].shape
+        if shape_a != shape_b:
+            print(f"shape mismatch at {param} - a:{shape_a}, b:{shape_b}")
+            sys.exit(1)
+
     # perform the merge
-    merged_model = deepcopy(model_a)
-    for param_merged, param_a, param_b in zip(merged_model.parameters(), model_a.parameters(), model_b.parameters()):
-        if param_a.data.shape != param_b.data.shape:
-            print(f"params differ in shape {param_a.data.shape} {param_b.data.shape}")
-            continue
-
+    state_a = model_a.state_dict()
+    state_b = model_b.state_dict()
+    for param in state_a:
         # TODO any rounding errors here?
-        param_merged.data = (param_a.data + param_b.data) / 2.0
+        state_a[param] = (state_a[param] + state_b[param]) / 2.0
 
-'''
+    # save the merged model
+    payload = {
+        'cfg': cfg,
+        'state_dicts': state_a,
+    }
+    torch.save(payload, output_path.open('wb'), pickle_module=dill)
+
