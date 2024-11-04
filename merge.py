@@ -27,18 +27,24 @@ if __name__ == "__main__":
         sys.exit(1)
 
     model_a = load_model(sys.argv[1])
-    print(model_a)
+    # print(model_a)
 
     model_b = load_model(sys.argv[2])
     print(model_b)
 
+'''
     if model_a.state_dict().keys() != model_b.state_dict().keys():
         print('models do not have the same architecture')
         sys.exit(1)
 
     # perform the merge
-    #merged_model = deepcopy(model_a)
-    #for param_merged, param_a, param_b in zip(merged_model.parameters(), model_a.parameters(), model_b.parameters()):
-    #    # TODO any rounding errors here?
-    #    param_merged.data = (param_a.data + param_b.data) / 2.0
+    merged_model = deepcopy(model_a)
+    for param_merged, param_a, param_b in zip(merged_model.parameters(), model_a.parameters(), model_b.parameters()):
+        if param_a.data.shape != param_b.data.shape:
+            print(f"params differ in shape {param_a.data.shape} {param_b.data.shape}")
+            continue
 
+        # TODO any rounding errors here?
+        param_merged.data = (param_a.data + param_b.data) / 2.0
+
+'''

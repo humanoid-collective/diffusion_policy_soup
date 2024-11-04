@@ -1,6 +1,6 @@
 {
     "chunks": [
-        73,
+        161,
         96,
         96,
         3
@@ -12,12 +12,12 @@
         "id": "blosc",
         "shuffle": 2
     },
-    "dtype": "|u1",
-    "fill_value": 0,
+    "dtype": "<f4",
+    "fill_value": 0.0,
     "filters": null,
     "order": "C",
     "shape": [
-        24644,
+        25650,
         96,
         96,
         3

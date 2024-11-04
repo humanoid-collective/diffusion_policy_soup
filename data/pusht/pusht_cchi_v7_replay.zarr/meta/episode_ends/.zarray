@@ -2,13 +2,19 @@
     "chunks": [
         208
     ],
-    "compressor": null,
+    "compressor": {
+        "blocksize": 0,
+        "clevel": 5,
+        "cname": "zstd",
+        "id": "blosc",
+        "shuffle": 2
+    },
     "dtype": "<i8",
     "fill_value": 0,
     "filters": null,
     "order": "C",
     "shape": [
-        151
+        206
     ],
     "zarr_format": 2
 }
