@@ -8,6 +8,7 @@ from copy import deepcopy
 from diffusion_policy.policy.base_lowdim_policy import BaseLowdimPolicy
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 
+
 def load_model(path):
     payload = torch.load(open(path, 'rb'), pickle_module=dill)
     cfg = payload['cfg']
@@ -16,11 +17,7 @@ def load_model(path):
     workspace: BaseWorkspace
     workspace.load_payload(payload, exclude_keys=None, include_keys=None)
 
-    # diffusion model
-    model: BaseImagePolicy
-    model = workspace.model
-
-    return model, cfg
+    return workspace, payload
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
@@ -29,12 +26,14 @@ if __name__ == "__main__":
 
     output_path = pathlib.Path(sys.argv[3])
 
-    model_a, cfg = load_model(sys.argv[1])
+    workspace_a, payload = load_model(sys.argv[1])
+    model_a: BaseImagePolicy = workspace_a.model
 
     # print(model_a)
     # print(model_a.state_dict().keys())
 
-    model_b, _ = load_model(sys.argv[2])
+    workspace_b, _ = load_model(sys.argv[2])
+    model_b: BaseImagePolicy = workspace_b.model
     # print(model_b)
 
     if model_a.state_dict().keys() != model_b.state_dict().keys():
@@ -52,13 +51,18 @@ if __name__ == "__main__":
     state_a = model_a.state_dict()
     state_b = model_b.state_dict()
     for param in state_a:
+        # TODO is this proper way to mutate the state dict?
         # TODO any rounding errors here?
-        state_a[param] = (state_a[param] + state_b[param]) / 2.0
+        workspace_a.model.state_dict()[param] = (state_a[param] + state_b[param]) / 2.0
 
     # save the merged model
-    payload = {
-        'cfg': cfg,
-        'state_dicts': state_a,
-    }
-    torch.save(payload, output_path.open('wb'), pickle_module=dill)
+    # TODO use the workspace.save_checkpoint for this
+    # workspace_a.state_dicts
+    # new_payload = {
+    #     'cfg': payload['cfg'],
+    #     'state_dicts': state_a,
+    #     'pickles': payload['pickles'],
+    # }
+    # torch.save(new_payload, output_path.open('wb'), pickle_module=dill)
+    workspace_a.save_checkpoint(path=output_path)
 
