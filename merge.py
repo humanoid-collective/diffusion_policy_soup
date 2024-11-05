@@ -26,13 +26,13 @@ if __name__ == "__main__":
 
     output_path = pathlib.Path(sys.argv[3])
 
-    workspace_a, payload = load_model(sys.argv[1])
+    workspace_a, payload_a = load_model(sys.argv[1])
     model_a: BaseImagePolicy = workspace_a.model
 
     # print(model_a)
     # print(model_a.state_dict().keys())
 
-    workspace_b, _ = load_model(sys.argv[2])
+    workspace_b, payload_b = load_model(sys.argv[2])
     model_b: BaseImagePolicy = workspace_b.model
     # print(model_b)
 
@@ -57,6 +57,11 @@ if __name__ == "__main__":
         new_state_dict[param] = (state_a[param] + state_b[param]) / 2.0
 
     workspace_a.model.load_state_dict(new_state_dict)
+    # for key in state_a.keys():
+    #     print(f"compare {state_a[key]} and {new_state_dict[key]}")
+        # if state_a[key] != new_state_dict[key]:
+        #     print(f"different f{key}")
+        #     sys.exit(1)
 
     # save the merged model
     # TODO use the workspace.save_checkpoint for this
@@ -67,5 +72,9 @@ if __name__ == "__main__":
     #     'pickles': payload['pickles'],
     # }
     # torch.save(new_payload, output_path.open('wb'), pickle_module=dill)
-    workspace_a.save_checkpoint(path=output_path)
+    print(payload_a['state_dicts'].keys())
+    print('------------------------------')
+    # print(payload_b['cfg'])
+    # print(payload_a['pickles'])
+    # workspace_a.save_checkpoint(path=output_path)
 
