@@ -55,13 +55,16 @@ if __name__ == "__main__":
         # TODO is this proper way to mutate the state dict?
         # TODO any rounding errors here?
         new_state_dict[param] = (state_a[param] + state_b[param]) / 2.0
+        # print(f"merging a:{state_a[param]}, b:{state_b[param]}, res:{new_state_dict[param]}")
 
     workspace_a.model.load_state_dict(new_state_dict)
-    # for key in state_a.keys():
-    #     print(f"compare {state_a[key]} and {new_state_dict[key]}")
-        # if state_a[key] != new_state_dict[key]:
-        #     print(f"different f{key}")
-        #     sys.exit(1)
+
+    # TODO might need to merge the ema_model too
+    workspace_a.ema_model = None
+    # if payload_a['cfg'].training.use_ema:
+    #     workspace_a.ema_model = deepcopy(workspace_a.model)
+
+
 
     # save the merged model
     # TODO use the workspace.save_checkpoint for this
@@ -72,9 +75,7 @@ if __name__ == "__main__":
     #     'pickles': payload['pickles'],
     # }
     # torch.save(new_payload, output_path.open('wb'), pickle_module=dill)
-    print(payload_a['state_dicts'].keys())
-    print('------------------------------')
     # print(payload_b['cfg'])
-    # print(payload_a['pickles'])
-    # workspace_a.save_checkpoint(path=output_path)
+    # print(payload_a['state_dicts'].keys())
+    workspace_a.save_checkpoint(path=output_path)
 
