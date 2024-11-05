@@ -50,10 +50,13 @@ if __name__ == "__main__":
     # perform the merge
     state_a = model_a.state_dict()
     state_b = model_b.state_dict()
+    new_state_dict = {}
     for param in state_a:
         # TODO is this proper way to mutate the state dict?
         # TODO any rounding errors here?
-        workspace_a.model.state_dict()[param] = (state_a[param] + state_b[param]) / 2.0
+        new_state_dict[param] = (state_a[param] + state_b[param]) / 2.0
+
+    workspace_a.model.load_state_dict(new_state_dict)
 
     # save the merged model
     # TODO use the workspace.save_checkpoint for this
