@@ -32,7 +32,7 @@ policy:
 
     n_layer: 8
     n_head: 4
-    n_emb: 256
+    n_emb: 768
     p_drop_emb: 0.0
     p_drop_attn: 0.01
 

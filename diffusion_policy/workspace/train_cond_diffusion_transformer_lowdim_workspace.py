@@ -159,6 +159,8 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
         bert_model = BertModel.from_pretrained("bert-base-uncased")
         bert_outputs = bert_model(input_ids=task_tokens['input_ids'], attention_mask=task_tokens['attention_mask'])
         embeddings = bert_outputs.last_hidden_state # (batch_size, seq_num, hidden_size)
+        # TODO is there a constant for batch size?
+        batch_embeddings = embeddings.repeat(256, 1, 1)
 
         print('task_tokens', task_tokens)
         print('embeddings', embeddings, embeddings.shape)
@@ -180,7 +182,7 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
 
                         # compute loss
                         # TODO append the text prompt to the conditioning
-                        raw_loss = self.model.compute_loss(batch, task_tokens=task_tokens)
+                        raw_loss = self.model.compute_loss(batch, task_tokens=batch_embeddings)
                         loss = raw_loss / cfg.training.gradient_accumulate_every
                         loss.backward()
 

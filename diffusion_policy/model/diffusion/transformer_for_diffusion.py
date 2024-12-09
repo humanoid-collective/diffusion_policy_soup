@@ -272,7 +272,8 @@ class TransformerForDiffusion(ModuleAttrMixin):
     def forward(self, 
         sample: torch.Tensor, 
         timestep: Union[torch.Tensor, float, int], 
-        cond: Optional[torch.Tensor]=None, **kwargs):
+        cond: Optional[torch.Tensor]=None,
+        task_tokens: Optional[torch.Tensor]=None, **kwargs):
         """
         x: (B,T,input_dim)
         timestep: (B,) or int, diffusion step
@@ -314,8 +315,13 @@ class TransformerForDiffusion(ModuleAttrMixin):
             if self.obs_as_cond:
                 cond_obs_emb = self.cond_obs_emb(cond)
                 # (B,To,n_emb)
-                print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
+                # print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
+
+            if task_tokens is not None:
+                # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
+                torch.cat([cond_embeddings, task_tokens], dim=1)
+
             tc = cond_embeddings.shape[1]
             position_embeddings = self.cond_pos_emb[
                 :, :tc, :

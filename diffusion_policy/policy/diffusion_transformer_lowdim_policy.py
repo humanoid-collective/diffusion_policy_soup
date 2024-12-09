@@ -191,12 +191,9 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 end = start + self.n_action_steps
                 trajectory = action[:,start:end]
 
-            # append task tokens to conditioning
-            #if task_tokens is not None:
-            #    cond = torch.cat(cond, task_tokens)
-        
         else:
             trajectory = torch.cat([action, obs], dim=-1)
+
 
         # generate impainting mask
         if self.pred_action_steps_only:
@@ -224,7 +221,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         noisy_trajectory[condition_mask] = trajectory[condition_mask]
         
         # Predict the noise residual
-        pred = self.model(noisy_trajectory, timesteps, cond)
+        pred = self.model(noisy_trajectory, timesteps, cond, task_tokens=task_tokens)
 
         pred_type = self.noise_scheduler.config.prediction_type 
         if pred_type == 'epsilon':
