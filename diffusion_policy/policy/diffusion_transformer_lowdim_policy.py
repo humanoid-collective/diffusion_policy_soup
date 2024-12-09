@@ -171,7 +171,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 learning_rate=learning_rate, 
                 betas=tuple(betas))
 
-    def compute_loss(self, batch):
+    def compute_loss(self, batch, task_tokens=None):
         # normalize input
         assert 'valid_mask' not in batch
         nbatch = self.normalizer.normalize(batch)
@@ -181,6 +181,8 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         # handle different ways of passing observation
         cond = None
         trajectory = action
+
+        # TODO what exactly is the purpose of obs_as_cond?
         if self.obs_as_cond:
             cond = obs[:,:self.n_obs_steps,:]
             if self.pred_action_steps_only:
@@ -188,9 +190,14 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 start = To - 1
                 end = start + self.n_action_steps
                 trajectory = action[:,start:end]
+
+            # append task tokens to conditioning
+            #if task_tokens is not None:
+            #    cond = torch.cat(cond, task_tokens)
+        
         else:
             trajectory = torch.cat([action, obs], dim=-1)
-        
+
         # generate impainting mask
         if self.pred_action_steps_only:
             condition_mask = torch.zeros_like(trajectory, dtype=torch.bool)

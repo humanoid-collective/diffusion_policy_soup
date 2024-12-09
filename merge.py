@@ -60,7 +60,9 @@ if __name__ == "__main__":
     workspace_a.model.load_state_dict(new_state_dict)
 
     # TODO might need to merge the ema_model too
+    # TODO do we need ema?
     workspace_a.ema_model = None
+    workspace_a.cfg.training.use_ema = False # what does ema do?
     # if payload_a['cfg'].training.use_ema:
     #     workspace_a.ema_model = deepcopy(workspace_a.model)
 

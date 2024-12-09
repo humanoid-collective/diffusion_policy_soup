@@ -464,7 +464,7 @@ ctrl-b + d
 ```
 
 ## TODO
-vast.ai running out of disk when saving checkpoints. either get more disk or remove old checkpoints?
+- [ ] try transforming policies to sparse and then merging them?
 
 ## 🏷️ License
 This repository is released under the MIT license. See [LICENSE](LICENSE) for additional details.

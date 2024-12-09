@@ -147,6 +147,8 @@ class TransformerForDiffusion(ModuleAttrMixin):
         self.time_as_cond = time_as_cond
         self.obs_as_cond = obs_as_cond
         self.encoder_only = encoder_only
+        print('ENCODER_ONLY', self.encoder_only)
+        print('OBS_AS_COND', self.obs_as_cond)
 
         # init
         self.apply(self._init_weights)
@@ -306,11 +308,13 @@ class TransformerForDiffusion(ModuleAttrMixin):
             x = x[:,1:,:]
             # (B,T,n_emb)
         else:
+            # NOTE: this option for cond_diffusion_transformer
             # encoder
             cond_embeddings = time_emb
             if self.obs_as_cond:
                 cond_obs_emb = self.cond_obs_emb(cond)
                 # (B,To,n_emb)
+                print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
             tc = cond_embeddings.shape[1]
             position_embeddings = self.cond_pos_emb[
