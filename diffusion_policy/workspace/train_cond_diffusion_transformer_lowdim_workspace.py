@@ -179,7 +179,7 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
 
                         # compute loss
                         # TODO append the text prompt to the conditioning
-                        raw_loss = self.model.compute_loss(batch, task_tokens=batch_embeddings)
+                        raw_loss = self.model.compute_loss(batch, task_tokens=batch_embeddings.to(device, non_blocking=True))
                         loss = raw_loss / cfg.training.gradient_accumulate_every
                         loss.backward()
 
