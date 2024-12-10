@@ -20,6 +20,7 @@ import tqdm
 import numpy as np
 import shutil
 from transformers import BertTokenizer, BertModel
+from typing import Optional
 
 from diffusion_policy.common.pytorch_util import dict_apply, optimizer_to
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
@@ -38,8 +39,8 @@ OmegaConf.register_new_resolver("eval", eval, replace=True)
 class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
     include_keys = ['global_step', 'epoch']
 
-    def __init__(self, cfg: OmegaConf):
-        super().__init__(cfg)
+    def __init__(self, cfg: OmegaConf, output_dir: Optional[str]=None):
+        super().__init__(cfg, output_dir)
 
         # set seed
         seed = cfg.training.seed
@@ -159,8 +160,6 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
         bert_model = BertModel.from_pretrained("bert-base-uncased")
         bert_outputs = bert_model(input_ids=task_tokens['input_ids'], attention_mask=task_tokens['attention_mask'])
         embeddings = bert_outputs.last_hidden_state # (batch_size, seq_num, hidden_size)
-        # TODO is there a constant for batch size?
-        batch_embeddings = embeddings.repeat(256, 1, 1)
 
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
@@ -172,6 +171,10 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
                 with tqdm.tqdm(train_dataloader, desc=f"Training epoch {self.epoch}", 
                         leave=False, mininterval=cfg.training.tqdm_interval_sec) as tepoch:
                     for batch_idx, batch in enumerate(tepoch):
+
+                        # TODO is there a constant for batch size?
+                        batch_embeddings = embeddings.repeat(batch['obs'].shape[0], 1, 1)
+
                         # device transfer
                         batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
                         if train_sampling_batch is None:

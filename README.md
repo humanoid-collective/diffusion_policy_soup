@@ -463,6 +463,13 @@ you can then detach from the tmux instance with
 ctrl-b + d
 ```
 
+## merging
+
+To merge the models, you can use the `merge.py` script that will average _every_ parameter.
+```
+USAGE: python merge.py <model_a> <model_b> <output_model>
+```
+
 ## TODO
 - [ ] try transforming policies to sparse and then merging them?
 
