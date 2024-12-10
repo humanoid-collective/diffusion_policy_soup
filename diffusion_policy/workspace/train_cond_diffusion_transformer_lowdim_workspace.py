@@ -162,9 +162,6 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
         # TODO is there a constant for batch size?
         batch_embeddings = embeddings.repeat(256, 1, 1)
 
-        print('task_tokens', task_tokens)
-        print('embeddings', embeddings, embeddings.shape)
-
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
         with JsonLogger(log_path) as json_logger:
