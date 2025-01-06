@@ -441,6 +441,7 @@ git clone https://github.com/MrPicklePinosaur/diffusion_policy.git
 
 set up conda env
 ```
+cd diffusion_policy
 conda init
 source ~/.bashrc
 conda env create -f conda_environment.yaml

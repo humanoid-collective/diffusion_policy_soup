@@ -17,12 +17,47 @@ import dill
 import wandb
 import json
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
+from diffusion_policy.policy.diffusion_transformer_lowdim_policy import DiffusionTransformerLowdimPolicy
+
+# Enable need_weights on MultiheadedAttention block
+def patch_attention(m):
+    forward_orig = m.forward
+
+    def wrap(*args, **kwargs):
+        kwargs["need_weights"] = True
+        kwargs["average_attn_weights"] = False
+
+        return forward_orig(*args, **kwargs)
+
+    m.forward = wrap
+
+# Hook used to log the attention weights
+class AttentionHeatmapHook:
+    def __init__(self):
+        self.outputs = []
+
+    def __call__(self, module, module_input, module_output):
+        # TODO just capture a single sample for now
+        if len(self.outputs) == 0:
+            attn, attn_weights = module_output
+            print(attn_weights.shape)
+            if attn_weights == None:
+                print('attn_weights not enabled, ensure need_weights=True is set')
+                return
+            # (batch, heads, target_seq_len, source_seq_len) 
+            sample = attn_weights[0][0]
+            print('heatmap_hook', sample)
+            self.outputs.append(sample)
+
+    def clear(self):
+        self.outputs = []
 
 @click.command()
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
 @click.option('-d', '--device', default='cuda:0')
-def main(checkpoint, output_dir, device):
+@click.option('-a', '--debug_attention', is_flag=True)
+def main(checkpoint, output_dir, device, debug_attention):
     if os.path.exists(output_dir):
         click.confirm(f"Output path {output_dir} already exists! Overwrite?", abort=True)
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -34,15 +69,28 @@ def main(checkpoint, output_dir, device):
     workspace = cls(cfg, output_dir=output_dir)
     workspace: BaseWorkspace
     workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+
+    print(workspace)
     
     # get policy from workspace
     policy = workspace.model
     if cfg.training.use_ema:
         policy = workspace.ema_model
+
+    if debug_attention:
+        if isinstance(policy, DiffusionTransformerLowdimPolicy):
+            print('adding attention heatmap hook')
+
+            # attach hook to debug the attention
+            # NOTE extracting attention from last decoder layer, could also investigate other layers 
+            heatmap_hook = AttentionHeatmapHook()
+            patch_attention(policy.model.decoder.layers[-1].multihead_attn)
+            policy.model.decoder.layers[-1].multihead_attn.register_forward_hook(heatmap_hook)
     
     device = torch.device(device)
     policy.to(device)
     policy.eval()
+
     
     # run eval
     env_runner = hydra.utils.instantiate(
