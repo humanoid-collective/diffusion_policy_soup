@@ -17,6 +17,8 @@ from diffusion_policy.policy.base_lowdim_policy import BaseLowdimPolicy
 from diffusion_policy.common.pytorch_util import dict_apply
 from diffusion_policy.env_runner.base_lowdim_runner import BaseLowdimRunner
 
+from transformers import BertTokenizer, BertModel
+
 class PushTKeypointsRunner(BaseLowdimRunner):
     def __init__(self,
             output_dir,
@@ -156,7 +158,7 @@ class PushTKeypointsRunner(BaseLowdimRunner):
         self.max_steps = max_steps
         self.tqdm_interval_sec = tqdm_interval_sec
     
-    def run(self, policy: BaseLowdimPolicy):
+    def run(self, policy: BaseLowdimPolicy, task_description=None):
         device = policy.device
         dtype = policy.dtype
 
@@ -170,6 +172,18 @@ class PushTKeypointsRunner(BaseLowdimRunner):
         # allocate data
         all_video_paths = [None] * n_inits
         all_rewards = [None] * n_inits
+
+        # generate conditional text embedding
+        task_tokens=None
+        if task_description != None:
+            tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") 
+            task_description = "push the t-shaped block to x=256, y=256"
+            task_tokens = tokenizer(task_description, return_tensors="pt")
+
+            bert_model = BertModel.from_pretrained("bert-base-uncased")
+            bert_outputs = bert_model(input_ids=task_tokens['input_ids'], attention_mask=task_tokens['attention_mask'])
+            task_tokens = bert_outputs.last_hidden_state # (seq_num, hidden_size)
+
 
         for chunk_idx in range(n_chunks):
             start = chunk_idx * n_envs
@@ -198,6 +212,11 @@ class PushTKeypointsRunner(BaseLowdimRunner):
             done = False
             while not done:
                 Do = obs.shape[-1] // 2
+
+                # resize task tokens to correct dimension for batch
+                if task_tokens != None:
+                    task_tokens = task_tokens.repeat(obs.shape[0], 1, 1)
+
                 # create obs dict
                 np_obs_dict = {
                     # handle n_latency_steps by discarding the last n_latency_steps
@@ -216,7 +235,7 @@ class PushTKeypointsRunner(BaseLowdimRunner):
 
                 # run policy
                 with torch.no_grad():
-                    action_dict = policy.predict_action(obs_dict)
+                    action_dict = policy.predict_action(obs_dict, task_tokens=task_tokens)
 
                 # device_transfer
                 np_action_dict = dict_apply(action_dict,

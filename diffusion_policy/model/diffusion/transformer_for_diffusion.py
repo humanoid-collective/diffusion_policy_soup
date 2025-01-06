@@ -29,7 +29,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
         # compute number of tokens for main trunk and condition encoder
         if n_obs_steps is None:
             n_obs_steps = horizon
-        
+
         T = horizon
         T_cond = 1
         if not time_as_cond:
@@ -319,13 +319,18 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
 
             if task_tokens is not None:
-                # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
-                torch.cat([cond_embeddings, task_tokens], dim=1)
+                print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
+                cond_embeddings = torch.cat([cond_embeddings, task_tokens], dim=1)
+
+            print('cond_embeddings shape', cond_embeddings.shape)
 
             tc = cond_embeddings.shape[1]
+            # TODO Need to resize self.cond_pos_emb
+            print('position_embedding shape before', self.cond_pos_emb.shape)
             position_embeddings = self.cond_pos_emb[
                 :, :tc, :
             ]  # each position maps to a (learnable) vector
+            print('position_embedding shape after', position_embeddings.shape)
             x = self.drop(cond_embeddings + position_embeddings)
             x = self.encoder(x)
             memory = x

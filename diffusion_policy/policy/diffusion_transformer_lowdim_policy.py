@@ -55,6 +55,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
     def conditional_sample(self, 
             condition_data, condition_mask,
             cond=None, generator=None,
+            task_tokens=None,
             # keyword arguments to scheduler.step
             **kwargs
             ):
@@ -75,7 +76,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             trajectory[condition_mask] = condition_data[condition_mask]
 
             # 2. predict model output
-            model_output = model(trajectory, t, cond)
+            model_output = model(trajectory, t, cond, task_tokens=task_tokens)
 
             # 3. compute previous image: x_t -> x_t-1
             trajectory = scheduler.step(
@@ -90,7 +91,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         return trajectory
 
 
-    def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def predict_action(self, obs_dict: Dict[str, torch.Tensor], task_tokens=None) -> Dict[str, torch.Tensor]:
         """
         obs_dict: must include "obs" key
         result: must include "action" key
@@ -133,6 +134,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             cond_data, 
             cond_mask,
             cond=cond,
+            task_tokens=task_tokens,
             **self.kwargs)
         
         # unnormalize prediction
@@ -172,6 +174,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 betas=tuple(betas))
 
     def compute_loss(self, batch, task_tokens=None):
+        print('task_tokens', task_tokens)
         # normalize input
         assert 'valid_mask' not in batch
         nbatch = self.normalizer.normalize(batch)

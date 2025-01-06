@@ -35,44 +35,48 @@ def patch_attention(m):
     m.forward = wrap
 
 # Hook used to log the attention weights
-attention_hook = []
+attention_hook = {}
 class AttentionHeatmapHook:
-    def __init__(self):
+    def __init__(self, layer):
         global attention_hook
-        attention_hook = []
+        self.layer = layer
 
     def __call__(self, module, module_input, module_output):
         global attention_hook
         # TODO just capture a single sample for now
-        if len(attention_hook) == 0:
-            attn, attn_weights = module_output
-            print(attn_weights.shape)
-            if attn_weights == None:
-                print('attn_weights not enabled, ensure need_weights=True is set')
-                return
-            # (batch, heads, target_seq_len, source_seq_len) 
-            sample = attn_weights[0].detach().numpy()
-            print('heatmap_hook', sample)
-            attention_hook.append(sample)
+        attn, attn_weights = module_output
+        # print(attn_weights.shape)
+        if attn_weights == None:
+            print('attn_weights not enabled, ensure need_weights=True is set')
+            return
+        # (batch, heads, target_seq_len, source_seq_len) 
+        sample = attn_weights[0].detach().numpy()
+        # print('heatmap_hook', sample)
+        attention_hook[self.layer] = sample
 
-            # graph the heatmap
-            fig, axes = plt.subplots(len(sample), 1, figsize=(15,10))
-            for i, ax in enumerate(axes.flat):
-                seaborn.heatmap(sample[i], ax=ax)
+        # graph the heatmap
+        if self.layer == 7:
+            fig, axes = plt.subplots(4, 8, figsize=(15,10))
+            for i in range(8):
+                for j in range(4):
+                    seaborn.heatmap(attention_hook[i][j], ax=axes.flat[j+4*i], vmin=0.0, vmax=1.0)
 
             plt.tight_layout()
+            plt.xlabel('observation')
+            plt.ylabel('action sequence')
             plt.show()
 
     def clear(self):
         global attention_hook
-        attention_hook = []
+        attention_hook = {}
 
 @click.command()
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
 @click.option('-d', '--device', default='cuda:0')
 @click.option('-D', '--debug', is_flag=True)
-def main(checkpoint, output_dir, device, debug):
+@click.option('-t', '--task_description')
+def main(checkpoint, output_dir, device, debug, task_description):
     if os.path.exists(output_dir):
         click.confirm(f"Output path {output_dir} already exists! Overwrite?", abort=True)
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -94,24 +98,24 @@ def main(checkpoint, output_dir, device, debug):
 
     if debug:
         if isinstance(policy, DiffusionTransformerLowdimPolicy):
-            print('adding attention heatmap hook')
+            print('adding attention heatmap hook...')
 
             # attach hook to debug the attention
             # NOTE extracting attention from last decoder layer, could also investigate other layers 
-            heatmap_hook = AttentionHeatmapHook()
-            patch_attention(policy.model.decoder.layers[-1].multihead_attn)
-            policy.model.decoder.layers[-1].multihead_attn.register_forward_hook(heatmap_hook)
+            for i in range(len(policy.model.decoder.layers)):
+                heatmap_hook = AttentionHeatmapHook(i)
+                patch_attention(policy.model.decoder.layers[i].multihead_attn)
+                policy.model.decoder.layers[i].multihead_attn.register_forward_hook(heatmap_hook)
     
     device = torch.device(device)
     policy.to(device)
     policy.eval()
 
-    
     # run eval
     env_runner = hydra.utils.instantiate(
         cfg.task.env_runner,
         output_dir=output_dir)
-    runner_log = env_runner.run(policy)
+    runner_log = env_runner.run(policy, task_description=task_description)
     
     # dump log to json
     json_log = dict()

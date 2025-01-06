@@ -179,6 +179,8 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
         bert_outputs = bert_model(input_ids=task_tokens['input_ids'], attention_mask=task_tokens['attention_mask'])
         embeddings = bert_outputs.last_hidden_state # (batch_size, seq_num, hidden_size)
 
+        print('embedding shape', embeddings.shape)
+
         # training loop
         log_path = os.path.join(self.output_dir, 'logs.json.txt')
         with JsonLogger(log_path) as json_logger:
