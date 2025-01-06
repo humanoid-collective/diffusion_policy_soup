@@ -64,3 +64,5 @@ dependencies:
     - r3m @ https://github.com/facebookresearch/r3m/archive/b2334e726887fa0206962d7984c69c5fb09cceab.tar.gz
     - dm-control==1.0.9
     - transformers==4.46.2
+    - seaborn==0.13.2
+    - huggingface-hub==0.25.0

@@ -3,6 +3,7 @@ Usage:
 python eval.py --checkpoint data/image/pusht/diffusion_policy_cnn/train_0/checkpoints/latest.ckpt -o data/pusht_eval_output
 """
 
+import enum
 import sys
 # use line-buffering for both stdout and stderr
 sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)
@@ -16,6 +17,8 @@ import torch
 import dill
 import wandb
 import json
+import seaborn
+import matplotlib.pyplot as plt
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.policy.diffusion_transformer_lowdim_policy import DiffusionTransformerLowdimPolicy
 
@@ -32,32 +35,44 @@ def patch_attention(m):
     m.forward = wrap
 
 # Hook used to log the attention weights
+attention_hook = []
 class AttentionHeatmapHook:
     def __init__(self):
-        self.outputs = []
+        global attention_hook
+        attention_hook = []
 
     def __call__(self, module, module_input, module_output):
+        global attention_hook
         # TODO just capture a single sample for now
-        if len(self.outputs) == 0:
+        if len(attention_hook) == 0:
             attn, attn_weights = module_output
             print(attn_weights.shape)
             if attn_weights == None:
                 print('attn_weights not enabled, ensure need_weights=True is set')
                 return
             # (batch, heads, target_seq_len, source_seq_len) 
-            sample = attn_weights[0][0]
+            sample = attn_weights[0].detach().numpy()
             print('heatmap_hook', sample)
-            self.outputs.append(sample)
+            attention_hook.append(sample)
+
+            # graph the heatmap
+            fig, axes = plt.subplots(len(sample), 1, figsize=(15,10))
+            for i, ax in enumerate(axes.flat):
+                seaborn.heatmap(sample[i], ax=ax)
+
+            plt.tight_layout()
+            plt.show()
 
     def clear(self):
-        self.outputs = []
+        global attention_hook
+        attention_hook = []
 
 @click.command()
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
 @click.option('-d', '--device', default='cuda:0')
-@click.option('-a', '--debug_attention', is_flag=True)
-def main(checkpoint, output_dir, device, debug_attention):
+@click.option('-D', '--debug', is_flag=True)
+def main(checkpoint, output_dir, device, debug):
     if os.path.exists(output_dir):
         click.confirm(f"Output path {output_dir} already exists! Overwrite?", abort=True)
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -77,7 +92,7 @@ def main(checkpoint, output_dir, device, debug_attention):
     if cfg.training.use_ema:
         policy = workspace.ema_model
 
-    if debug_attention:
+    if debug:
         if isinstance(policy, DiffusionTransformerLowdimPolicy):
             print('adding attention heatmap hook')
 
@@ -110,3 +125,5 @@ def main(checkpoint, output_dir, device, debug_attention):
 
 if __name__ == '__main__':
     main()
+
+
