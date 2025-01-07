@@ -34,19 +34,6 @@ from diffusers.training_utils import EMAModel
 
 OmegaConf.register_new_resolver("eval", eval, replace=True)
 
-# Hook used to log the attention weights
-class AttentionHeatmapHook:
-    def __init__(self):
-        self.outputs = []
-
-    def __call__(self, module, module_input, module_output):
-        print('heatmap_hook:module', module)
-        print('heatmap_hook', module_output)
-        # self.outputs.append(module_output)
-
-    def clear(self):
-        self.outputs = []
-
 # Conditional diffusion policy with text prompt
 # %%
 class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
@@ -71,11 +58,6 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
 
         # configure training state
         self.optimizer = self.model.get_optimizer(**cfg.optimizer)
-
-        # attach hook to debug the attention
-        # NOTE extracting attention from last decoder layer, could also investigate other layers 
-        heatmap_hook = AttentionHeatmapHook()
-        self.model.model.decoder.layers[-1].multihead_attn.register_forward_hook(heatmap_hook)
 
         self.global_step = 0
         self.epoch = 0

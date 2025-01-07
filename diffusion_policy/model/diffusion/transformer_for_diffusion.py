@@ -2,10 +2,13 @@ from typing import Union, Optional, Tuple
 import logging
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from diffusion_policy.model.diffusion.positional_embedding import SinusoidalPosEmb
 from diffusion_policy.model.common.module_attr_mixin import ModuleAttrMixin
 
 logger = logging.getLogger(__name__)
+
+MAX_TASK_TOKENS = 24
 
 class TransformerForDiffusion(ModuleAttrMixin):
     def __init__(self,
@@ -39,6 +42,9 @@ class TransformerForDiffusion(ModuleAttrMixin):
         if obs_as_cond:
             assert time_as_cond
             T_cond += n_obs_steps
+
+        # the last n tokens are reserved for the task description embedding
+        T_cond += MAX_TASK_TOKENS
 
         # input embedding stem
         self.input_emb = nn.Linear(input_dim, n_emb)
@@ -318,19 +324,38 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 # print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
 
+            task_token_mask = None
             if task_tokens is not None:
-                print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
+
+                # truncate/pad the text embedding
+                if task_tokens.shape[1] > MAX_TASK_TOKENS:
+                    print('warning: task tokens too long, truncating..')
+                    task_tokens = task_tokens[:, :MAX_TASK_TOKENS, :]
+
+                # TODO pretty sus way to pad
+                task_tokens_len = task_tokens.shape[1]
+                padding_tensor = torch.zeros((task_tokens.shape[0], MAX_TASK_TOKENS-task_tokens.shape[1], task_tokens.shape[2]), dtype=torch.int).detach()
+                task_tokens = torch.cat([task_tokens, padding_tensor], dim=1)
+
+                # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
                 cond_embeddings = torch.cat([cond_embeddings, task_tokens], dim=1)
 
-            print('cond_embeddings shape', cond_embeddings.shape)
+                # generate appropriate mask (mask out all the padding tokens)
+                mask_tensor_unmasked = torch.full((self.T, self.T_cond-MAX_TASK_TOKENS+task_tokens_len), 0.).detach()
+                mask_tensor_masked = torch.full((self.T, MAX_TASK_TOKENS-task_tokens_len), float('-inf')).detach()
+
+                task_token_mask = torch.cat([mask_tensor_unmasked, mask_tensor_masked], dim=1)
+
+
+            if task_token_mask != None:
+                # merge with existing mask
+                self.memory_mask = torch.maximum(self.memory_mask, task_token_mask)
 
             tc = cond_embeddings.shape[1]
             # TODO Need to resize self.cond_pos_emb
-            print('position_embedding shape before', self.cond_pos_emb.shape)
             position_embeddings = self.cond_pos_emb[
                 :, :tc, :
             ]  # each position maps to a (learnable) vector
-            print('position_embedding shape after', position_embeddings.shape)
             x = self.drop(cond_embeddings + position_embeddings)
             x = self.encoder(x)
             memory = x

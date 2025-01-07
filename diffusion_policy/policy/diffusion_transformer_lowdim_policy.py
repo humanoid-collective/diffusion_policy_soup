@@ -174,7 +174,6 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 betas=tuple(betas))
 
     def compute_loss(self, batch, task_tokens=None):
-        print('task_tokens', task_tokens)
         # normalize input
         assert 'valid_mask' not in batch
         nbatch = self.normalizer.normalize(batch)
