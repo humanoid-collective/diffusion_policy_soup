@@ -335,21 +335,21 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 # TODO pretty sus way to pad
                 task_tokens_len = task_tokens.shape[1]
                 padding_tensor = torch.zeros((task_tokens.shape[0], MAX_TASK_TOKENS-task_tokens.shape[1], task_tokens.shape[2]), dtype=torch.int).detach()
-                task_tokens = torch.cat([task_tokens, padding_tensor], dim=1)
+                task_tokens = torch.cat([task_tokens, padding_tensor], dim=1).detach()
 
                 # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
-                cond_embeddings = torch.cat([cond_embeddings, task_tokens], dim=1)
+                cond_embeddings = torch.cat([cond_embeddings, task_tokens], dim=1).detach()
 
                 # generate appropriate mask (mask out all the padding tokens)
                 mask_tensor_unmasked = torch.full((self.T, self.T_cond-MAX_TASK_TOKENS+task_tokens_len), 0.).detach()
                 mask_tensor_masked = torch.full((self.T, MAX_TASK_TOKENS-task_tokens_len), float('-inf')).detach()
 
-                task_token_mask = torch.cat([mask_tensor_unmasked, mask_tensor_masked], dim=1)
+                task_token_mask = torch.cat([mask_tensor_unmasked, mask_tensor_masked], dim=1).detach()
 
 
             if task_token_mask != None:
                 # merge with existing mask
-                self.memory_mask = torch.maximum(self.memory_mask, task_token_mask)
+                self.memory_mask = torch.maximum(self.memory_mask, task_token_mask).detach()
 
             tc = cond_embeddings.shape[1]
             # TODO Need to resize self.cond_pos_emb
