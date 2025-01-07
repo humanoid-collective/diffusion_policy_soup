@@ -446,7 +446,7 @@ conda init
 source ~/.bashrc
 conda env create -f conda_environment.yaml
 conda activate robodiff
-pip install huggingface-hub==0.25.0
+# pip install huggingface-hub==0.25.0
 ```
 
 login to wandb
@@ -456,7 +456,7 @@ wandb login
 
 run training
 ```
-python train.py --config-dir=. --config-name=train_diffusion_unet_lowdim_workspace
+python train.py --config-dir=. --config-name=train_cond_diffusion_transformer_lowdim_pusht_workspace
 ```
 
 you can then detach from the tmux instance with
