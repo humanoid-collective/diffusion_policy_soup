@@ -245,7 +245,8 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
                                 leave=False, mininterval=cfg.training.tqdm_interval_sec) as tepoch:
                             for batch_idx, batch in enumerate(tepoch):
                                 batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
-                                loss = self.model.compute_loss(batch)
+                                batch_embeddings = embeddings.repeat(batch['obs'].shape[0], 1, 1)
+                                loss = self.model.compute_loss(batch, task_tokens=batch_embeddings.to(device, non_blocking=True))
                                 val_losses.append(loss)
                                 if (cfg.training.max_val_steps is not None) \
                                     and batch_idx >= (cfg.training.max_val_steps-1):
