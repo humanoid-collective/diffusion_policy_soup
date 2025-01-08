@@ -335,6 +335,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 # TODO pretty sus way to pad
                 task_tokens_len = task_tokens.shape[1]
                 padding_tensor = torch.zeros((task_tokens.shape[0], MAX_TASK_TOKENS-task_tokens.shape[1], task_tokens.shape[2]), dtype=torch.int).detach().to(sample.device)
+                task_tokens = task_tokens.to(sample.device)
                 task_tokens = torch.cat([task_tokens, padding_tensor], dim=1).detach().to(sample.device)
 
                 # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
@@ -369,7 +370,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
             ]  # each position maps to a (learnable) vector
             x = self.drop(token_embeddings + position_embeddings)
             # (B,T,n_emb)
-            print('decoder args', x.shape, memory.shape, self.mask.shape, self.memory_mask.shape)
+            # print('decoder args', x.shape, memory.shape, self.mask.shape, self.memory_mask.shape)
             x = self.decoder(
                 tgt=x,
                 memory=memory,

@@ -177,7 +177,6 @@ class PushTKeypointsRunner(BaseLowdimRunner):
         task_tokens=None
         if task_description != None:
             tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") 
-            task_description = "push the t-shaped block to x=256, y=256"
             task_tokens = tokenizer(task_description, return_tensors="pt")
 
             bert_model = BertModel.from_pretrained("bert-base-uncased")
