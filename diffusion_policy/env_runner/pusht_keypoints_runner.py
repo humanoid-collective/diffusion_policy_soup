@@ -209,12 +209,13 @@ class PushTKeypointsRunner(BaseLowdimRunner):
             pbar = tqdm.tqdm(total=self.max_steps, desc=f"Eval PushtKeypointsRunner {chunk_idx+1}/{n_chunks}", 
                 leave=False, mininterval=self.tqdm_interval_sec)
             done = False
+
+            # resize task tokens to correct dimension for batch
+            if task_tokens != None:
+                task_tokens = task_tokens.repeat(obs.shape[0], 1, 1)
+
             while not done:
                 Do = obs.shape[-1] // 2
-
-                # resize task tokens to correct dimension for batch
-                if task_tokens != None:
-                    task_tokens = task_tokens.repeat(obs.shape[0], 1, 1)
 
                 # create obs dict
                 np_obs_dict = {

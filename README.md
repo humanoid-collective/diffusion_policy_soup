@@ -429,24 +429,22 @@ Make sure your workspace yaml's `_target_` points to the new workspace class you
 
 ## Setting up on vast.ai instance
 
-install deps
-```
-sudo apt-get install -y g++ build-essential libgl1
-```
-
 clone repo
 ```
 git clone https://github.com/MrPicklePinosaur/diffusion_policy.git
 ```
 
+install deps
+```
+sudo apt-get install -y g++ build-essential libgl1
+```
+
 set up conda env
 ```
-cd diffusion_policy
 conda init
 source ~/.bashrc
 conda env create -f conda_environment.yaml
 conda activate robodiff
-# pip install huggingface-hub==0.25.0
 ```
 
 login to wandb
