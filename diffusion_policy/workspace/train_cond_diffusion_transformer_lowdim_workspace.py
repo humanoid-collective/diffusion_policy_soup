@@ -264,7 +264,8 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
                         obs_dict = {'obs': batch['obs']}
                         gt_action = batch['action']
                         
-                        result = policy.predict_action(obs_dict)
+                        batch_embeddings = embeddings.repeat(batch['obs'].shape[0], 1, 1)
+                        result = policy.predict_action(obs_dict, task_tokens=batch_embeddings.to(device, non_blocking=True))
                         if cfg.pred_action_steps_only:
                             pred_action = result['action']
                             start = cfg.n_obs_steps - 1
