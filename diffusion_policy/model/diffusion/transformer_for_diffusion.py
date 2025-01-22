@@ -8,7 +8,7 @@ from diffusion_policy.model.common.module_attr_mixin import ModuleAttrMixin
 
 logger = logging.getLogger(__name__)
 
-MAX_TASK_TOKENS = 24
+MAX_TASK_TOKENS = 1
 
 class TransformerForDiffusion(ModuleAttrMixin):
     def __init__(self,
@@ -321,7 +321,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
             if self.obs_as_cond:
                 cond_obs_emb = self.cond_obs_emb(cond)
                 # (B,To,n_emb)
-                # print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
+                print('shape of cross attention', cond_embeddings.shape, cond_obs_emb.shape)
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
 
             task_token_mask = None
@@ -338,7 +338,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 task_tokens = task_tokens.to(sample.device)
                 task_tokens = torch.cat([task_tokens, padding_tensor], dim=1).detach().to(sample.device)
 
-                # print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
+                print('CAT dimensions', cond_embeddings.shape, task_tokens.shape)
                 cond_embeddings = torch.cat([cond_embeddings, task_tokens], dim=1).detach()
 
                 # generate appropriate mask (mask out all the padding tokens)

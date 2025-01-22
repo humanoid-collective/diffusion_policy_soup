@@ -74,7 +74,7 @@ class AttentionHeatmapHook:
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
 @click.option('-d', '--device', default='cuda:0')
-@click.option('-D', '--debug', is_flag=True)
+@click.option('-D', '--debug', is_flag=False)
 @click.option('-t', '--task_description')
 def main(checkpoint, output_dir, device, debug, task_description):
     if os.path.exists(output_dir):

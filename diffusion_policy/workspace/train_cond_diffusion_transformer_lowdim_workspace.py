@@ -154,12 +154,12 @@ class TrainCondDiffusionTransformerLowdimWorkspace(BaseWorkspace):
         # generate tokenized task conditioning
         # TODO use BERT?
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") 
-        task_description = "push the t-shaped block to x=256, y=256"
+        task_description = "x=256, y=256"
         task_tokens = tokenizer(task_description, return_tensors="pt")
 
         bert_model = BertModel.from_pretrained("bert-base-uncased")
         bert_outputs = bert_model(input_ids=task_tokens['input_ids'], attention_mask=task_tokens['attention_mask'])
-        embeddings = bert_outputs.last_hidden_state # (batch_size, seq_num, hidden_size)
+        embeddings = bert_outputs.last_hidden_state[:, 0, :].unsqueeze(1) # (batch_size, seq_num, hidden_size)
 
         print('embedding shape', embeddings.shape)
 
